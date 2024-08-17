@@ -76,7 +76,11 @@ func main() {
 		log.Fatalf("Request failed: %s\n", err.Error())
 	}
 
-	taskList, err := parseTasksList(response)
+	if response.StatusCode != 200 {
+		log.Fatalf("Request failed: %s\n", response.Status)
+	}
+
+	taskList, err := parseTasksListFromResponse(response)
 
 	if err != nil {
 		log.Printf("Error parsing task list: %s\n", err.Error())
