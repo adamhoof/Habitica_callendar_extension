@@ -11,6 +11,16 @@ import (
 	"time"
 )
 
+const (
+	MON = 1
+	TUE = 2
+	WED = 3
+	THU = 4
+	FRI = 5
+	SAT = 6
+	SUN = 0
+)
+
 type TaskList struct {
 	Success bool   `json:"success"`
 	Data    []Task `json:"data"`
@@ -34,7 +44,7 @@ func requestTasks() (*http.Response, error) {
 	return client.Do(request)
 }
 
-func parseTasksList(response *http.Response) (TaskList, error) {
+func parseTasksListFromResponse(response *http.Response) (TaskList, error) {
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
@@ -52,18 +62,14 @@ func parseTasksList(response *http.Response) (TaskList, error) {
 func getTomorrowsDayNumber() uint8 {
 	currentTime := time.Now()
 
-	tomorrow := currentTime.Add(72 * time.Hour)
+	tomorrow := currentTime.Add(24 * time.Hour)
 
-	dayNumber := uint8(tomorrow.Weekday())
-
-	if dayNumber == 0 {
-		dayNumber = 7
-	}
-	return dayNumber
-
+	return uint8(tomorrow.Weekday())
 }
 
-func printTomorrowsTasks(list *TaskList) {
+func printTomorrowsTasks(tomorrowDayNumber uint8, list *TaskList) {
+	fmt.Println(tomorrowDayNumber)
+
 	for _, task := range list.Data {
 		fmt.Printf("Task Name: %s\n", task.Text)
 		fmt.Printf("Repeat: %v\n", task.Repeat)
@@ -88,6 +94,5 @@ func main() {
 		log.Printf("Error parsing task list: %s\n", err.Error())
 	}
 
-	fmt.Println(getTomorrowsDayNumber())
-	printTomorrowsTasks(&taskList)
+	printTomorrowsTasks(getTomorrowsDayNumber(), &taskList)
 }
