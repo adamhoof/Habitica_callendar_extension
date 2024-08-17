@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/joho/godotenv"
 	"io"
 	"log"
 	"net/http"
@@ -70,6 +71,7 @@ func printTomorrowsTasks(list *TaskList) {
 }
 
 func main() {
+	err := godotenv.Load("env.list")
 	response, err := requestTasks()
 
 	if err != nil {
