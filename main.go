@@ -1,35 +1,15 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/widget"
 	"github.com/joho/godotenv"
-	"io"
 	"log"
 	"net/http"
 	"os"
-	"time"
 )
-
-const (
-	MON = 1
-	TUE = 2
-	WED = 3
-	THU = 4
-	FRI = 5
-	SAT = 6
-	SUN = 0
-)
-
-type TaskList struct {
-	Success bool   `json:"success"`
-	Data    []Task `json:"data"`
-}
-
-type Task struct {
-	Text   string          `json:"text"`
-	Repeat map[string]bool `json:"repeat"`
-}
 
 func requestTasks() (*http.Response, error) {
 	client := &http.Client{}
@@ -44,40 +24,23 @@ func requestTasks() (*http.Response, error) {
 	return client.Do(request)
 }
 
-func parseTasksListFromResponse(response *http.Response) (TaskList, error) {
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			fmt.Println("Error closing body")
-		}
-	}(response.Body)
-
-	body, err := io.ReadAll(response.Body)
-	var taskList TaskList
-	err = json.Unmarshal(body, &taskList)
-
-	return taskList, err
-}
-
-func getTomorrowsDayNumber() uint8 {
-	currentTime := time.Now()
-
-	tomorrow := currentTime.Add(24 * time.Hour)
-
-	return uint8(tomorrow.Weekday())
-}
-
-func printTomorrowsTasks(tomorrowDayNumber uint8, list *TaskList) {
-	fmt.Println(tomorrowDayNumber)
+func getTomorrowsTasks(tomorrowDayNumber uint8, list *TaskList) string {
+	dayShortName := convertDayNumberToShortString(tomorrowDayNumber)
+	var tasksString string
+	fmt.Printf("Tomorrows (%s) tasks...\n", dayShortName)
 
 	for _, task := range list.Data {
-		fmt.Printf("Task Name: %s\n", task.Text)
-		fmt.Printf("Repeat: %v\n", task.Repeat)
+		if task.Repeat[dayShortName] == false {
+			continue
+		}
+
+		tasksString += task.Text
+		tasksString += "\n"
 	}
+	return tasksString
 }
 
-func main() {
-	err := godotenv.Load("env.list")
+func fetchTasksButtonHandler() (tomorrowsTasksListString string) {
 	response, err := requestTasks()
 
 	if err != nil {
@@ -94,5 +57,27 @@ func main() {
 		log.Printf("Error parsing task list: %s\n", err.Error())
 	}
 
-	printTomorrowsTasks(getTomorrowsDayNumber(), &taskList)
+	return getTomorrowsTasks(getTomorrowsDayNumber(), &taskList)
+}
+
+func main() {
+	err := godotenv.Load("env.list")
+
+	if err != nil {
+		log.Fatalf("Error loading .env file: %s\n", err.Error())
+	}
+
+	a := app.New()
+	w := a.NewWindow("Habitica Callendar Extension")
+	var tomorrowsTasksListString string
+	tg := widget.NewTextGrid()
+
+	w.SetContent(container.NewVBox(
+		widget.NewButton("Fetch tasks", func() {
+			tomorrowsTasksListString = fetchTasksButtonHandler()
+			tg.SetText(tomorrowsTasksListString)
+		}),
+		tg,
+	))
+	w.ShowAndRun()
 }
