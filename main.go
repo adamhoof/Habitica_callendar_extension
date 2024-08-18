@@ -27,7 +27,6 @@ func requestTasks() (*http.Response, error) {
 func getTomorrowsTasks(tomorrowDayNumber uint8, list *TaskList) string {
 	dayShortName := convertDayNumberToShortString(tomorrowDayNumber)
 	var tasksString string
-	fmt.Printf("Tomorrows (%s) tasks...\n", dayShortName)
 
 	for _, task := range list.Data {
 		if task.Repeat[dayShortName] == false {
