@@ -17,7 +17,7 @@ type Task struct {
 	Repeat map[string]bool `json:"repeat"`
 }
 
-func parseTasksListFromResponse(response *http.Response) (TaskList, error) {
+func parseTasksListFromResponse(response *http.Response) (*TaskList, error) {
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
@@ -29,5 +29,5 @@ func parseTasksListFromResponse(response *http.Response) (TaskList, error) {
 	var taskList TaskList
 	err = json.Unmarshal(body, &taskList)
 
-	return taskList, err
+	return &taskList, err
 }

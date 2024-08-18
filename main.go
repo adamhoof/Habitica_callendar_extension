@@ -23,8 +23,8 @@ func requestTasks() (*http.Response, error) {
 	return client.Do(request)
 }
 
-func getTomorrowsTasks(tomorrowDayNumber uint8, list *TaskList) string {
-	dayShortName := convertDayNumberToShortString(tomorrowDayNumber)
+func getTasksForDay(day string, list *TaskList) string {
+	dayShortName := shortenDayName(day)
 	var tasksString string
 
 	for _, task := range list.Data {
@@ -38,7 +38,7 @@ func getTomorrowsTasks(tomorrowDayNumber uint8, list *TaskList) string {
 	return tasksString
 }
 
-func fetchTasksButtonHandler() (tomorrowsTasksListString string) {
+func fetchTasksButtonHandler(day string) (tomorrowsTasksListString string) {
 	response, err := requestTasks()
 
 	if err != nil {
@@ -55,7 +55,7 @@ func fetchTasksButtonHandler() (tomorrowsTasksListString string) {
 		log.Printf("Error parsing task list: %s\n", err.Error())
 	}
 
-	return getTomorrowsTasks(getTomorrowsDayNumber(), &taskList)
+	return getTasksForDay(day, taskList)
 }
 
 func main() {
@@ -67,13 +67,14 @@ func main() {
 
 	a := app.New()
 	w := a.NewWindow("Habitica Callendar Extension")
-	var tomorrowsTasksListString string
+	var tasksListString string
+	dayOptions := []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
 	tg := widget.NewTextGrid()
 
 	w.SetContent(container.NewVBox(
-		widget.NewButton("Fetch tasks", func() {
-			tomorrowsTasksListString = fetchTasksButtonHandler()
-			tg.SetText(tomorrowsTasksListString)
+		widget.NewSelect(dayOptions, func(day string) {
+			tasksListString = fetchTasksButtonHandler(day)
+			tg.SetText(tasksListString)
 		}),
 		tg,
 	))
